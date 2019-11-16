@@ -1,10 +1,13 @@
+server:
+  port: 8080
+
 spring:
-  profiles:
-    active: dev
   #数据源配置
   datasource:
-    type: com.alibaba.druid.pool.DruidDataSource
-
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql://www.hiyzx.cn:3306/activiti?useSSL=false
+    username: root
+    password: yzx123456
 #freemarker模板配置
   freemarker:
     suffix: .ftl
@@ -18,25 +21,11 @@ spring:
       defaultEncoding: UTF-8
       url_escaping_charset: UTF-8
       locale: zh_CN
-  http:
-    multipart:
-      max-file-size: -1
-      max-request-size: -1
-    activiti:
-      check-process-definitions: false
+  activiti:
+        check-process-definitions: false
+        db-identity-used: true
+        # 自动生成Activiti相关表 第一次生成后建议关闭提高运行速度
+        database-schema-update: true
+        # 保存历史数据级别设置为full最高级别，便于历史数据的追溯
+        history-level: full
 
-server:
-  session:
-    timeout: 3600
-
----
-#环境
-spring:
-  profiles: dev
-  datasource:
-    url: jdbc:mysql://localhost:3306/activiti6?useUnicode=true&useSSL=false&amp;characterEncoding=utf8&allowMultiQueries=true
-    username: root
-    password: 123456
-
-server:
-  port: 8080
