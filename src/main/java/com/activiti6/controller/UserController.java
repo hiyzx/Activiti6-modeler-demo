@@ -1,32 +1,29 @@
 package com.activiti6.controller;
 
+import com.activiti6.vo.TaskVo;
+import com.activiti6.vo.UserVo;
+import org.activiti.engine.HistoryService;
+import org.activiti.engine.IdentityService;
+import org.activiti.engine.TaskService;
+import org.activiti.engine.history.HistoricTaskInstance;
+import org.activiti.engine.history.HistoricVariableInstance;
+import org.activiti.engine.identity.User;
+import org.activiti.engine.task.Task;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.ModelAndView;
+
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
-import org.activiti.engine.FormService;
-import org.activiti.engine.HistoryService;
-import org.activiti.engine.IdentityService;
-import org.activiti.engine.TaskService;
-import org.activiti.engine.history.HistoricTaskInstance;
-import org.activiti.engine.history.HistoricVariableInstance;
-import org.activiti.engine.history.HistoricVariableInstanceQuery;
-import org.activiti.engine.identity.User;
-import org.activiti.engine.task.Task;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.ModelAndView;
-
-import com.activiti6.vo.TaskVo;
-import com.activiti6.vo.UserDto;
-import com.activiti6.vo.UserVo;
-
-import javax.servlet.http.HttpServletResponse;
 
 /**
  * @author yezhaoxing
@@ -84,10 +81,11 @@ public class UserController {
         List<TaskVo> rtn = new ArrayList<>();
         taskList.forEach(o -> {
             Map<String, Object> variables = taskService.getVariables(o.getId());
-            Long day = (Long) variables.get("day");
+            Long day = (Long) variables.get("day") == null ? 0L : (Long) variables.get("day");
             String applyName = StringUtils.isEmpty((String) variables.get("applyName")) ? ""
                     : (String) variables.get("applyName");
-            String remark = (String) variables.get("remark");
+            String remark = StringUtils.isEmpty((String) variables.get("remark")) ? ""
+                    : (String) variables.get("remark");
             rtn.add(new TaskVo(o.getId(), o.getName(), applyName, day, remark, null));
         });
         modelAndView.setViewName("task");

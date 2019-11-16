@@ -7,6 +7,7 @@ import org.activiti.engine.runtime.ProcessInstance;
 import org.activiti.engine.task.Task;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -42,6 +43,7 @@ public class VacationController {
     }
 
     @GetMapping("/apply")
+    @Transactional
     public void apply(HttpServletResponse response, @RequestParam String userId, @RequestParam Long day,
             @RequestParam String remark) throws IOException {
         // 查找流程定义
@@ -51,7 +53,7 @@ public class VacationController {
         User user = identityService.createUserQuery().userId(userId).singleResult();
 
         // 初始化任务参数
-        Map<String, Object> vars = new HashMap<String, Object>();
+        Map<String, Object> vars = new HashMap<>();
         vars.put("day", day);
         vars.put("remark", remark);
         vars.put("applyName", user.getFirstName());
@@ -59,7 +61,7 @@ public class VacationController {
         ProcessInstance processInstance = runtimeService.startProcessInstanceByKey(pd.getKey());
         Task firstTask = taskService.createTaskQuery().processInstanceId(processInstance.getId())
                 .taskCandidateOrAssigned(userId).singleResult();
-        if(firstTask == null){
+        if (firstTask == null) {
             throw new RuntimeException("没有权限");
         }
         // 设置任务受理人
@@ -80,8 +82,7 @@ public class VacationController {
     }
 
     @GetMapping("/image")
-    public void image(@RequestParam String taskId)
-            throws IOException {
+    public void image(@RequestParam String taskId) throws IOException {
 
     }
 
