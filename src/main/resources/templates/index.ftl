@@ -2,12 +2,15 @@
 <html>
 <head>
 <meta charset="UTF-8"/>
-<title>Activiti6流程设计器Demo</title>
+<title>Activiti6流程设计器</title>
 
 </head>
 <body>
 <h2>
 	<a href='/create?name=activiti&key=123456'>绘制流程</a>
+</h2>
+<h2>
+    <a href='/user/index'>用户列表</a>
 </h2>
 <div>
 	<table width="100%">
