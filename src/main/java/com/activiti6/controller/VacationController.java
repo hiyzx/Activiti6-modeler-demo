@@ -1,20 +1,30 @@
 package com.activiti6.controller;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletResponse;
+
+import org.activiti.bpmn.model.BpmnModel;
 import org.activiti.engine.*;
 import org.activiti.engine.identity.User;
 import org.activiti.engine.repository.ProcessDefinition;
 import org.activiti.engine.runtime.ProcessInstance;
 import org.activiti.engine.task.Task;
+import org.activiti.image.ProcessDiagramGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
-
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * @author yezhaoxing
@@ -27,13 +37,13 @@ public class VacationController {
     @Autowired
     private IdentityService identityService;
     @Autowired
-    private FormService formService;
-    @Autowired
     private RuntimeService runtimeService;
     @Autowired
     private RepositoryService repositoryService;
     @Autowired
     private TaskService taskService;
+    @Autowired
+    private ProcessEngineConfiguration processEngineConfiguration;
 
     @GetMapping("/page")
     public ModelAndView page(@RequestParam String userId, ModelAndView modelAndView) {
@@ -49,7 +59,6 @@ public class VacationController {
         // 查找流程定义
         ProcessDefinition pd = repositoryService.createProcessDefinitionQuery().processDefinitionKey("vacation")
                 .latestVersion().singleResult();
-
         User user = identityService.createUserQuery().userId(userId).singleResult();
 
         // 初始化任务参数
@@ -82,8 +91,48 @@ public class VacationController {
     }
 
     @GetMapping("/image")
-    public void image(@RequestParam String taskId) throws IOException {
+    public void image(@RequestParam String processInstanceId, HttpServletResponse response) throws IOException {
+        try (OutputStream out = response.getOutputStream()) {
+            InputStream is = getDiagram(processInstanceId);
+            response.setContentType("multipart/form-data;charset=utf8");
+            response.setHeader("Content-Disposition", "attachment;filename=workFlow.png");
+            out.write(getImgByte(is));
+            out.flush();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
+    public InputStream getDiagram(String processInstanceId) {
+        // 查询流程实例
+        ProcessInstance pi = this.runtimeService.createProcessInstanceQuery().processInstanceId(processInstanceId)
+                .singleResult();
+        // 查询流程定义
+        ProcessDefinition pd = repositoryService.createProcessDefinitionQuery()
+                .processDefinitionId(pi.getProcessDefinitionId()).singleResult();
+        // 获取 BPMN 模型对象
+        BpmnModel model = repositoryService.getBpmnModel(pd.getId());
+        // 定义使用宋体
+        String fontName = "宋体";
+        // 获取流程实例当前的节点，需要高亮显示
+        List<String> currentActs = runtimeService.getActiveActivityIds(pi.getId());
+        // BPMN模型对象、图片类型、显示的节点
+        ProcessDiagramGenerator processDiagramGenerator = processEngineConfiguration.getProcessDiagramGenerator();
+        InputStream is = processDiagramGenerator.generateDiagram(model, "png", currentActs, new ArrayList<>(), fontName,
+                fontName, fontName, null, 1.0);
+        return is;
+    }
+
+    // 将输入流转换为 byte 数组
+    private byte[] getImgByte(InputStream is) throws IOException {
+        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+        int b;
+        while ((b = is.read()) != -1) {
+            byteStream.write(b);
+        }
+        byte[] bs = byteStream.toByteArray();
+        byteStream.close();
+        return bs;
     }
 
 }
