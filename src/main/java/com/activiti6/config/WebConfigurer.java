@@ -5,10 +5,6 @@ import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-/**
- * 加载静态资源类
- * liuzhize 2019年3月7日下午3:25:49
- */
 @Configuration
 public class WebConfigurer implements WebMvcConfigurer {
 
