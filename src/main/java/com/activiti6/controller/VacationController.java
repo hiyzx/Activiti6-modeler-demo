@@ -1,16 +1,5 @@
 package com.activiti6.controller;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletResponse;
-
 import org.activiti.bpmn.model.BpmnModel;
 import org.activiti.engine.*;
 import org.activiti.engine.identity.User;
@@ -25,6 +14,16 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
+
+import javax.servlet.http.HttpServletResponse;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author yezhaoxing
@@ -55,7 +54,7 @@ public class VacationController {
     @GetMapping("/apply")
     @Transactional
     public void apply(HttpServletResponse response, @RequestParam String userId, @RequestParam Long day,
-            @RequestParam String remark) throws IOException {
+                      @RequestParam String remark) throws IOException {
         // 查找流程定义
         ProcessDefinition pd = repositoryService.createProcessDefinitionQuery().processDefinitionKey("vacation")
                 .latestVersion().singleResult();
@@ -63,7 +62,7 @@ public class VacationController {
 
         // 初始化任务参数
         Map<String, Object> vars = new HashMap<>();
-        vars.put("day", day);
+        vars.put("args", day);
         vars.put("remark", remark);
         vars.put("applyName", user.getFirstName());
 
@@ -91,11 +90,13 @@ public class VacationController {
     }
 
     @GetMapping("/image")
-    public void image(@RequestParam String processInstanceId, HttpServletResponse response) throws IOException {
+    public void image(@RequestParam String processInstanceId, HttpServletResponse response) {
         try (OutputStream out = response.getOutputStream()) {
             InputStream is = getDiagram(processInstanceId);
-            response.setContentType("multipart/form-data;charset=utf8");
-            response.setHeader("Content-Disposition", "attachment;filename=workFlow.png");
+            response.setHeader("Pragma", "no-cache");
+            response.setHeader("Cache-Control", "no-cache");
+            response.setDateHeader("Expires", 0);
+            response.setContentType("image/jpeg");
             out.write(getImgByte(is));
             out.flush();
         } catch (Exception e) {
@@ -103,7 +104,7 @@ public class VacationController {
         }
     }
 
-    public InputStream getDiagram(String processInstanceId) {
+    private InputStream getDiagram(String processInstanceId) {
         // 查询流程实例
         ProcessInstance pi = this.runtimeService.createProcessInstanceQuery().processInstanceId(processInstanceId)
                 .singleResult();
@@ -118,9 +119,8 @@ public class VacationController {
         List<String> currentActs = runtimeService.getActiveActivityIds(pi.getId());
         // BPMN模型对象、图片类型、显示的节点
         ProcessDiagramGenerator processDiagramGenerator = processEngineConfiguration.getProcessDiagramGenerator();
-        InputStream is = processDiagramGenerator.generateDiagram(model, "png", currentActs, new ArrayList<>(), fontName,
-                fontName, fontName, null, 1.0);
-        return is;
+        return processDiagramGenerator.generateDiagram(model, "png", currentActs, new ArrayList<>(), fontName,
+                fontName, fontName, null, 10.0);
     }
 
     // 将输入流转换为 byte 数组
